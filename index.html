@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Geonotification</title>
+</head>
+<body>
+
+	<button id="open">Geonotify me</button>
+	<button id="close">Close notification</button>
+
+	<img id="map-preview" src="" alt="" />
+	
+
+	<script>
+		var open = document.querySelector("#open");
+		var close = document.querySelector("#close");
+		var notification;
+
+		open.addEventListener("click",onOpen);
+		close.addEventListener("click",onClose);
+
+		function onOpen(){
+		  if(!window.Notification){
+		    alert("Notifications not supported");
+		    return;
+		  }
+		  
+		  if(Notification.permission !== "denied"){
+		    Notification.requestPermission(function(permission){
+		      if(permission === "granted"){
+		        var coords = navigator.geolocation.getCurrentPosition(onSuccess);       
+		      }
+		    });
+		  }
+
+		}
+
+		function onClose(){
+		  notification.close();
+		}
+
+		function onSuccess(pos){
+		  var map = 'http://maps.googleapis.com/maps/api/staticmap?center='+pos.coords.latitude+','+pos.coords.longitude+'&zoom=17&size=500x500&markers=color:red%7Clabel:%7C'+pos.coords.latitude+','+pos.coords.longitude+'&sensor=false';
+		  
+		  var request = 'https://maps.googleapis.com/maps/api/geocode/json?latlng='+pos.coords.latitude+','+pos.coords.longitude+'&sensor=true_or_false';
+		  
+		  ajaxCall(request, map);
+		}
+
+		function ajaxCall(request, map){
+		  var ajax = new XMLHttpRequest();
+		  
+		  ajax.onreadystatechange = function() {
+		    if (ajax.readyState == 4 ) {
+		       if(ajax.status == 200){
+		          var response = JSON.parse(ajax.responseText);
+		          json_response = response.results[0].formatted_address; 
+		         
+		          var options = { body: json_response, icon: map};
+		          notification = new Notification("Current Position", options);
+		          document.getElementById("map-preview").src = map;
+		       }
+		    }
+		  }
+		  ajax.open("GET", request, true);
+		  ajax.send();
+		}
+	</script>	
+</body>
+</html>
+
